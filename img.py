@@ -37,22 +37,22 @@ def variance(image):
             totalSum += (image[i][j] - average) ** 2
     return totalSum / (height * width)
 
-def translate(img, vec):
-    w, h = img.shape
-    newImg = np.full((w + vec[0], h + vec[1]),255)
-    mask = [[1, 0, 0],
-            [0, 1, 0],
-            [0, 0, 1]]
-    start = time.time()
-    for i in range(w):
-        for j in range(h):
-            mask[0][2] = i
-            mask[1][2] = j
-            [x, y, z]= np.matmul(mask, vec)
-            newImg[x][y] = img[i][j]
-    end = time.time()
-    print (end - start)
-    return newImg
+# def translate(img, vec):
+#     w, h = img.shape
+#     newImg = np.full((w + vec[0], h + vec[1]),255)
+#     mask = [[1, 0, 0],
+#             [0, 1, 0],
+#             [0, 0, 1]]
+#     start = time.time()
+#     for i in range(w):
+#         for j in range(h):
+#             mask[0][2] = i
+#             mask[1][2] = j
+#             [x, y, z]= np.matmul(mask, vec)
+#             newImg[x][y] = img[i][j]
+#     end = time.time()
+#     print (end - start)
+#     return newImg
 
 def scale(img, factor):
     w, h = img.shape
@@ -62,12 +62,38 @@ def scale(img, factor):
             [0, 1, 0],
             [0, 0, 1]]
     start = time.time()
-    for i in range(w):
-        for j in range(h):
+
+    i=0
+    while(i < w):
+        j=0
+        while(j<h):
             mask[0][0] = i
             mask[1][1] = j
             [x, y, z]= np.matmul(mask, vec)
-            newImg[int(math.ceil(x))][int(math.ceil(y))] = img[i][j]
+            x = int(round(x))
+            y = int(round(y))
+            if(factor > 1):
+                newImg[int(round(x-factor)):x+1, int(round(y-factor)):y+1] = img[i][j]
+            else:
+                newImg[x][y] = img[i][j]
+            j+=1
+        i+=1
+    end = time.time()
+    print (end - start)
+    return newImg
+
+def rotate(img, angle):
+    w, h = img.shape
+    newImg = np.zeros((512, 512))
+    mask = [[math.cos(math.radians(angle)), math.sin(math.radians(angle)), 0],
+            [-math.sin(math.radians(angle)), math.cos(math.radians(angle)), 0],
+            [0, 0, 1]]
+    start = time.time()
+    for i in range(w):
+        for j in range(h):
+            vec = [i, j, 1]
+            [x, y, z]= np.matmul(mask, vec)
+            newImg[int(round(x))%512][int(round(y))%512] = img[i][j]
     end = time.time()
     print (end - start)
     return newImg
@@ -117,34 +143,16 @@ def apply_threshold(image, threshold, value, sign):
                (image[i][j] == threshold and sign == 'eq'):
                 image[i][j] = value
 
-# image = cv2.imread('Lenna.png', 0)
-# height, width = image.shape
-#
-# q1 = image[0:height / 2, 0:width / 2]
-# q2 = image[0:height / 2, width / 2:width]
-# q3 = image[height / 2:height, 0:width / 2]
-# q4 = image[height / 2:height, width / 2:width]
+def convolution(image, cb):
+    editImg = image[:]
+    editImg.setflags(write=1)
+    height, width = editImg.shape
+    i = 1;
+    while (i < height - 1):
+        j = 1
+        while (j < width - 1):
+            editImg[i][j] = cb(image[i - 1:i + 1, j - 1:j + 1])
+            j+=1
+        i += 1
 
-# question 1
-# hist_draw(q1)
-# print('--------- Questao 1 -----------')
-# print('b) ' + str(avg(q2)))
-# print('c) ' + str(median(q3)))
-# print('d) ' + str(mode(q4)))
-# print('e) q1:' + str(variance(q1)))
-# print('e) q2:' + str(variance(q2)))
-# print('f) ' + str(count_lower(image[0:height/2, :], 100)))
-# print('g) ' + str(count_higher(image[height/2:height, :], 150)))
-#
-# # question 2
-# apply_threshold(q2, avg(q2) - 1, 255, 'gt') #-- a
-# apply_threshold(q4, mode(q4)[0] - 1, 200, 'gt') #-- b
-# apply_threshold(q3, median(q3) - 1, 220, 'gt') #-- c
-# apply_threshold(q2, avg(q2), 100, 'gt') #-- d
-# apply_threshold(q2, avg(q2), 0, 'gt') #-- e
-# apply_threshold(q3, median(q3), 255, 'gt') #-- e
-#
-# cv2.imshow('q2', image)
-#
-# cv2.waitKey(0)
-# cv2.destroyAllWindows()
+    return editImg
