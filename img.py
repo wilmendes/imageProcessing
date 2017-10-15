@@ -144,14 +144,14 @@ def apply_threshold(image, threshold, value, sign):
                 image[i][j] = value
 
 def convolution(image, cb):
-    editImg = image[:]
+    editImg = np.copy(image)
     editImg.setflags(write=1)
     height, width = editImg.shape
     i = 1;
     while (i < height - 1):
         j = 1
         while (j < width - 1):
-            editImg[i][j] = cb(image[i - 1:i + 1, j - 1:j + 1])
+            editImg[i][j] = cb(image[i - 1:i + 2, j - 1:j + 2])
             j+=1
         i += 1
 

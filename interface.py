@@ -72,36 +72,47 @@ class MainWindow(QMainWindow):
         mainMenu = self.menuBar()
         mainMenu.setNativeMenuBar(False)
 
+        #Creating Menus
         fileMenu = mainMenu.addMenu('File')
         statMenu = mainMenu.addMenu('Statistcs')
         transformationMenu = mainMenu.addMenu('Transformation')
         filterMenu = mainMenu.addMenu('Filter')
 
-        histButton = QAction(QIcon(''), 'Histogram', self)
+        lowPassSubMenu = filterMenu.addMenu('Low Pass')
+        highPassSubMenu = filterMenu.addMenu('High Pass')
+
+
+        #Creating Buttons
+        histButton = QAction('Histogram', self)
         histButton.triggered.connect(self.openHistogram)
 
-        openButton = QAction(QIcon(''), "Open Image", self)
+        openButton = QAction("Open Image", self)
         openButton.triggered.connect(self.onOpenImageClick)
 
-        scaleButton = QAction(QIcon(''), "Scale", self)
+        scaleButton = QAction("Scale", self)
         scaleButton.triggered.connect(self.onScale)
 
-        rotateButton = QAction(QIcon(''), "Rotate", self)
+        rotateButton = QAction("Rotate", self)
         rotateButton.triggered.connect(self.onRotate)
 
-        gaussianButton = QAction(QIcon(''), "Gaussian", self)
+        gaussianButton = QAction("Gaussian", self)
         gaussianButton.triggered.connect(self.onGaussianPress)
 
-        medianButton = QAction(QIcon(''), "Median", self)
+        medianButton = QAction("Median", self)
         medianButton.triggered.connect(self.onMedianPress)
+
+        prewittButton = QAction("Prewitt", self)
+        prewittButton.triggered.connect(self.onPrewittPress)
+
+        #Connectiong them
 
         fileMenu.addAction(openButton)
         statMenu.addAction(histButton)
-        # transformationMenu.addAction(translateButton)
         transformationMenu.addAction(scaleButton)
         transformationMenu.addAction(rotateButton)
-        filterMenu.addAction(gaussianButton)
-        filterMenu.addAction(medianButton)
+        lowPassSubMenu.addAction(gaussianButton)
+        lowPassSubMenu.addAction(medianButton)
+        highPassSubMenu.addAction(prewittButton)
 
     def onOpenImageClick(self):
         fName = QFileDialog.getOpenFileName(None, 'Open file', 'd:\\', "Image files (*.jpg *.gif *.png)")
@@ -127,18 +138,30 @@ class MainWindow(QMainWindow):
             self.setImage(newImg)
 
     def onGaussianPress(self):
-        print('Gaussian')
+        mask = np.matrix([[1,2,1],[2,4,2],[1,2,1]])
         def cb(mat):
-            return 255
-        ImgManipulator.convolution(self.currentImage, cb)
+            mult = np.multiply(mask, mat)
+            return np.sum(mult)/16
+        img = ImgManipulator.convolution(self.currentImage, cb)
+        self.setImage(img)
 
     def onMedianPress(self):
         def cb(mat):
-            median = ImgManipulator.avg(mat)
+            median = ImgManipulator.median(mat)
             return median
         img = ImgManipulator.convolution(self.currentImage, cb)
         self.setImage(img)
 
+    def onPrewittPress(self):
+        maskX = np.matrix([[-1, 0, 1], [-1, 0, 1], [-1, 0, 1]]).astype(float)
+        maskY = np.matrix([[1, 1, 1], [0, 0, 0], [-1, -1, -1]]).astype(float)
+
+        def cb(mat):
+            mult = np.multiply(maskY, mat)
+            return np.sum(mult) / 16
+
+        img = ImgManipulator.convolution(self.currentImage, cb)
+        self.setImage(img)
 
     def updateStatusBar(self):
         self.modeLbl.setText("Mode: " + str(ImgManipulator.mode(self.currentImage)[0]))
